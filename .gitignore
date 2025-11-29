@@ -16,6 +16,7 @@ Debug/
 Release/
 .vs/
 out/
+.vscode/
 
 # IDE specific files
 .vscode/settings.json
@@ -30,4 +31,3 @@ out/
 *.swo
 *~
 .DS_Store
-

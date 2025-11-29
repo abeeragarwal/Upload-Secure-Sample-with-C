@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug (External Terminal)",
+            "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/main.exe",
@@ -10,7 +10,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "externalConsole": true,
+            "externalConsole": false,
             "MIMode": "gdb",
             "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
             "setupCommands": [
@@ -20,7 +20,8 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "Build"
+            "preLaunchTask": "Build",
+            "console": "integratedTerminal"
         }
     ]
 }
