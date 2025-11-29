@@ -1,0 +1,33 @@
+# Environment variables (sensitive)
+.env
+
+# Compiled executables
+*.exe
+*.out
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+
+# Build directories
+build/
+Debug/
+Release/
+.vs/
+out/
+
+# IDE specific files
+.vscode/settings.json
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
