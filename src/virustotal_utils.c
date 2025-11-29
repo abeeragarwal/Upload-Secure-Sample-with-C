@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "virustotal_utils.h"
+#include "../include/virustotal_utils.h"
 
 // Platform-specific includes for sleep
 #ifdef _WIN32
@@ -65,46 +65,41 @@ static void ensure_curl_initialized(void) {
 static char* read_env_file_value(const char *key) {
     FILE *file = NULL;
     const char *env_paths[] = {
-        ".env",              // Current working directory
-        "./.env",            // Explicit current directory
-        "../.env",           // Parent directory
-        "../../.env"         // Grandparent directory
+        ".env",
+        "./.env",
+        "../.env",
+        "../../.env"
     };
     
-    // Try multiple locations for .env file
     for (int i = 0; i < 4; i++) {
         file = fopen(env_paths[i], "r");
         if (file) {
-            break; // Found it!
+            break;
         }
     }
     
     if (!file) {
-        return NULL; // File doesn't exist, that's okay
+        return NULL;
     }
     
     char line[MAX_LINE_LEN];
     char *value = NULL;
     
     while (fgets(line, sizeof(line), file)) {
-        // Remove trailing newline
         size_t len = strlen(line);
         if (len > 0 && line[len - 1] == '\n') {
             line[len - 1] = '\0';
         }
         
-        // Skip empty lines and comments
         if (line[0] == '\0' || line[0] == '#') {
             continue;
         }
         
-        // Find the '=' character
         char *equals = strchr(line, '=');
         if (!equals) {
             continue;
         }
         
-        // Extract key (everything before '=')
         char file_key[MAX_KEY_LEN];
         size_t key_len = equals - line;
         if (key_len >= MAX_KEY_LEN) {
@@ -113,22 +108,17 @@ static char* read_env_file_value(const char *key) {
         strncpy(file_key, line, key_len);
         file_key[key_len] = '\0';
         
-        // Trim whitespace from key
         while (key_len > 0 && (file_key[key_len - 1] == ' ' || file_key[key_len - 1] == '\t')) {
             file_key[--key_len] = '\0';
         }
         
-        // Check if this is the key we're looking for
         if (strcmp(file_key, key) == 0) {
-            // Extract value (everything after '=')
             char *file_value = equals + 1;
             
-            // Trim leading whitespace from value
             while (*file_value == ' ' || *file_value == '\t') {
                 file_value++;
             }
             
-            // Trim trailing whitespace and quotes
             size_t value_len = strlen(file_value);
             while (value_len > 0 && (file_value[value_len - 1] == ' ' || 
                                      file_value[value_len - 1] == '\t' ||
@@ -136,7 +126,6 @@ static char* read_env_file_value(const char *key) {
                 file_value[--value_len] = '\0';
             }
             
-            // Remove surrounding quotes if present
             if (value_len > 0 && ((file_value[0] == '"' && file_value[value_len - 1] == '"') ||
                                  (file_value[0] == '\'' && file_value[value_len - 1] == '\''))) {
                 file_value[value_len - 1] = '\0';
@@ -160,10 +149,8 @@ static char* read_env_file_value(const char *key) {
 
 // Get VirusTotal API key from .env file or environment variable
 static char* get_api_key(void) {
-    // First, try to read from .env file
     char *api_key = read_env_file_value("VIRUSTOTAL_API_KEY");
     
-    // If not found in .env file, try environment variable
     if (!api_key || strlen(api_key) == 0) {
         if (api_key) {
             free(api_key);
@@ -202,7 +189,6 @@ char* upload_to_virustotal(const char *file_path) {
         return NULL;
     }
     
-    // Ensure curl is initialized
     ensure_curl_initialized();
     
     CURL *curl = curl_easy_init();
@@ -212,7 +198,6 @@ char* upload_to_virustotal(const char *file_path) {
         return NULL;
     }
     
-    // Set headers
     struct curl_slist *headers = NULL;
     char auth_header[256];
     snprintf(auth_header, sizeof(auth_header), "x-apikey: %s", api_key);
@@ -229,16 +214,15 @@ char* upload_to_virustotal(const char *file_path) {
         return NULL;
     }
     
-    // Extract filename from path for upload
     const char *filename = strrchr(file_path, '/');
     if (filename) {
-        filename++; // Skip the '/'
+        filename++; 
     } else {
-        filename = strrchr(file_path, '\\'); // Windows path separator
+        filename = strrchr(file_path, '\\'); 
         if (filename) {
-            filename++; // Skip the '\'
+            filename++; 
         } else {
-            filename = file_path; // No path separator found
+            filename = file_path;
         }
     }
     
@@ -247,11 +231,9 @@ char* upload_to_virustotal(const char *file_path) {
     curl_mime_filedata(part, file_path);
     curl_mime_filename(part, filename);
     
-    // Set curl options
     curl_easy_setopt(curl, CURLOPT_URL, VIRUSTOTAL_UPLOAD_URL);
     curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
     
-    // Setup response handling
     struct ResponseData response;
     response.data = malloc(1);
     response.size = 0;
@@ -259,10 +241,7 @@ char* upload_to_virustotal(const char *file_path) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
     
-    // Perform upload
     CURLcode res = curl_easy_perform(curl);
-    
-    // Check response
     long response_code;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
     
@@ -276,7 +255,6 @@ char* upload_to_virustotal(const char *file_path) {
             fprintf(stderr, "Response: %s\n", response.data);
         }
     } else {
-        // Parse JSON response
         cJSON *json = cJSON_Parse(response.data);
         if (json) {
             cJSON *data = cJSON_GetObjectItem(json, "data");
@@ -321,14 +299,11 @@ int get_analysis(const char *file_id) {
         return 0;
     }
     
-    // Build analysis URL
     char url[512];
     snprintf(url, sizeof(url), "%s%s", VIRUSTOTAL_ANALYSIS_URL_PREFIX, file_id);
     
-    // Ensure curl is initialized
     ensure_curl_initialized();
     
-    // Poll for results
     while (1) {
         CURL *curl = curl_easy_init();
         if (!curl) {
@@ -337,17 +312,14 @@ int get_analysis(const char *file_id) {
             return 0;
         }
         
-        // Set headers
         struct curl_slist *headers = NULL;
         char auth_header[256];
         snprintf(auth_header, sizeof(auth_header), "x-apikey: %s", api_key);
         headers = curl_slist_append(headers, auth_header);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
         
-        // Set URL
         curl_easy_setopt(curl, CURLOPT_URL, url);
         
-        // Setup response handling
         struct ResponseData response;
         response.data = malloc(1);
         response.size = 0;
@@ -355,7 +327,6 @@ int get_analysis(const char *file_id) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&response);
         
-        // Perform request
         CURLcode res = curl_easy_perform(curl);
         
         long response_code;
@@ -382,7 +353,6 @@ int get_analysis(const char *file_id) {
             return 0;
         }
         
-        // Parse JSON response
         cJSON *json = cJSON_Parse(response.data);
         if (!json) {
             fprintf(stderr, "Error: Failed to parse JSON response\n");
@@ -430,7 +400,6 @@ int get_analysis(const char *file_id) {
         const char *status_str = status->valuestring;
         
         if (strcmp(status_str, "completed") == 0) {
-            // Scan is complete, get stats
             cJSON *stats = cJSON_GetObjectItem(attributes, "stats");
             if (stats) {
                 cJSON *harmless = cJSON_GetObjectItem(stats, "harmless");
@@ -459,14 +428,12 @@ int get_analysis(const char *file_id) {
             free(api_key);
             return 1;
         } else {
-            // Scan still in progress
             printf("Waiting for scan to complete...\n");
             cJSON_Delete(json);
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);
             free(response.data);
             
-            // Sleep before next poll
             sleep(POLL_INTERVAL_SECONDS);
         }
     }

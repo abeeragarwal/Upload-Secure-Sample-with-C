@@ -4,16 +4,14 @@
         {
             "label": "Build",
             "type": "shell",
-            "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
+            "command": "gcc",
             "args": [
                 "-o",
-                "main.exe",
-                "main.c",
-                "config/virustotal_utils.c",
-                "-I",
-                "C:\\msys64\\ucrt64\\include",
-                "-L",
-                "C:\\msys64\\ucrt64\\lib",
+                "${workspaceFolder}/main.exe",
+                "${workspaceFolder}/src/main.c",
+                "${workspaceFolder}/src/virustotal_utils.c",
+                "-I${workspaceFolder}/include",
+                "-I${workspaceFolder}",
                 "-lcurl",
                 "-lcjson"
             ],

@@ -20,3 +20,4 @@ char* upload_to_virustotal(const char *file_path);
 int get_analysis(const char *file_id);
 
 #endif /* VIRUSTOTAL_UTILS_H */
+

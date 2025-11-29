@@ -2,11 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "config/virustotal_utils.h"
+#include "../include/virustotal_utils.h"
 
 #define MAX_FILENAME_LEN 256
 #define MAX_PATH_LEN 512
-#define DATA_DIR "data"
 
 /**
  * Check if a file exists
@@ -20,12 +19,6 @@ bool file_exists(const char *filepath) {
     return false;
 }
 
-/**
- * Construct full file path from filename
- */
-void construct_file_path(char *full_path, size_t path_size, const char *filename) {
-    snprintf(full_path, path_size, "%s/%s", DATA_DIR, filename);
-}
 
 /**
  * Main function - handles UI/UX and orchestrates file scanning workflow
@@ -40,19 +33,32 @@ int main(void) {
     printf("========================================\n\n");
     
     // Prompt user for filename
-    printf("Enter filename from %s/ folder: ", DATA_DIR);
-    if (scanf("%255s", filename) != 1) {
-        fprintf(stderr, "Error: Failed to read filename.\n");
+    printf("Enter filename (or press Enter for sample_input.txt): ");
+    if (fgets(filename, sizeof(filename), stdin) == NULL) {
+        fprintf(stderr, "Error: Failed to read input.\n");
         return 1;
     }
     
-    // Construct full file path
-    construct_file_path(filepath, sizeof(filepath), filename);
+    // Remove trailing newline
+    size_t len = strlen(filename);
+    if (len > 0 && filename[len - 1] == '\n') {
+        filename[len - 1] = '\0';
+        len--;
+    }
+    
+    // If empty, use default
+    if (len == 0) {
+        strcpy(filename, "sample_input.txt");
+    }
+    
+    // Use filename directly (assumes file is in project root)
+    strncpy(filepath, filename, sizeof(filepath) - 1);
+    filepath[sizeof(filepath) - 1] = '\0';
     
     // Validate file exists
     printf("\nChecking if file exists: %s\n", filepath);
     if (!file_exists(filepath)) {
-        fprintf(stderr, "Error: File '%s' not found in %s/ directory.\n", filename, DATA_DIR);
+        fprintf(stderr, "Error: File '%s' not found.\n", filename);
         return 1;
     }
     
